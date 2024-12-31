@@ -7,22 +7,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Flask app
+# APP
 app = Flask(__name__)
 
-# Environment variables
+# ENVIRONMENT VARIABLES
 mongodb_connect = os.environ.get("MONGO_URI")
 database = os.environ.get("DATABASE")
 port = int(os.environ.get("PORT"))
 
-# Connect to MongoDB
+# DATABASE CONNECTION
 try:
     # MongoDB
     client = MongoClient(mongodb_connect)
-
     # Databases
     db = client[database]
-
     # Collections
     products = db["products"]
     sales = db["sales"]
@@ -33,7 +31,7 @@ except Exception as e:
     print(f"Server failed to start: {e}")
     exit(1)
 
-# Models
+# MODELS
 """ Product model """
 class ProductModel(BaseModel):
     name: str = Field(...)
@@ -46,7 +44,7 @@ class SaleModel(BaseModel):
     total_product: int = Field(...)
     total_price: float = Field(...)
 
-# Endpoints
+# API
 """ Testing API """
 @app.route('/', methods=['GET'])
 def index():
@@ -69,6 +67,49 @@ def createProduct():
             "message": "Data created successfully!",
             "data": product.dict()
         }), 201
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Get all
+@app.route('/product', methods=['GET'])
+def getAllProduct():
+    try:
+        # Fetch data
+        data = list(products.find())
+        
+        # Convert ObjectId to string
+        for product in data:
+            product["_id"] = str(product["_id"])
+
+        # Response
+        return jsonify({
+            "message": "Products retrieved successfully!",
+            "data": data
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Get by ID
+@app.route('/product/<string:product_id>', methods=['GET'])
+def get_product_by_id(product_id):
+    try:
+        # Find data
+        data = products.find_one({"_id": ObjectId(product_id)})
+
+        if not data:
+            return jsonify({"error": "Data product not found"}), 404
+
+        # Convert ObjectId to string
+        data["_id"] = str(data["_id"])
+
+        # Response
+        return jsonify({
+            "message": "Product retrieved successfully!",
+            "data": data
+        }), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -134,17 +175,17 @@ def createSale():
 def getAllSale():
     try:
         # Fetch data
-        sales_data = list(sales.find())
+        data = list(sales.find())
 
         # Convert ObjectId to string
-        for sale in sales_data:
+        for sale in data:
             sale["_id"] = str(sale["_id"])
             sale["product_id"] = str(sale["product_id"])
 
         # Response
         return jsonify({
             "message": "Sales retrieved successfully",
-            "data": sales_data
+            "data": data
         }), 200
 
     except Exception as e:
@@ -155,24 +196,24 @@ def getAllSale():
 def getOneSale(sale_id):
     try:
         # Find data
-        sale = sales.find_one({"_id": ObjectId(sale_id)})
+        data = sales.find_one({"_id": ObjectId(sale_id)})
 
-        if not sale:
+        if not data:
             return jsonify({"error": "Data sale not found"}), 404
 
         # Convert ObjectId to string
-        sale["_id"] = str(sale["_id"])
-        sale["product_id"] = str(sale["product_id"])
+        data["_id"] = str(data["_id"])
+        data["product_id"] = str(data["product_id"])
 
         # Response
         return jsonify({
             "message": "Sale retrieved successfully",
-            "data": sale
+            "data": data
         }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Run app
+# RUN APP
 if __name__ == '__main__':
     app.run(debug=True, port=port)
