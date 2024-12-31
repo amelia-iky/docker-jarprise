@@ -283,6 +283,79 @@ def getOneSale(sale_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/sale/<string:sale_id>', methods=['PUT'])
+def updateSale(sale_id):
+    try:
+        # Request data
+        data = request.get_json()
+        new_product_id = data.get("product_id")
+        new_quantity = data.get("quantity")
+
+        # Validate request data
+        if not new_product_id or not new_quantity:
+            return jsonify({"error": "product_id and quantity are required"}), 400
+
+        if new_quantity <= 0:
+            return jsonify({"error": "Quantity must be greater than 0"}), 400
+
+        # Find the existing sale
+        existing_sale = sales.find_one({"_id": ObjectId(sale_id)})
+        if not existing_sale:
+            return jsonify({"error": "Sale data not found"}), 404
+
+        # Find the old product associated with the sale
+        old_product = products.find_one({"_id": ObjectId(existing_sale["product_id"])})
+        if not old_product:
+            return jsonify({"error": "Old product data not found"}), 404
+
+        # Restore the stock of the old product
+        products.update_one(
+            {"_id": ObjectId(existing_sale["product_id"])},
+            {"$inc": {"stock": existing_sale["total_product"]}}
+        )
+
+        # Find the new product
+        new_product = products.find_one({"_id": ObjectId(new_product_id)})
+        if not new_product:
+            return jsonify({"error": "New product data not found"}), 404
+
+        if new_product["stock"] < new_quantity:
+            return jsonify({"error": "Insufficient stock for the new product"}), 400
+
+        # Deduct the stock of the new product
+        products.update_one(
+            {"_id": ObjectId(new_product_id)},
+            {"$inc": {"stock": -new_quantity}}
+        )
+
+        # Calculate the new total price
+        new_total_price = new_product["price"] * new_quantity
+
+        # Update the sale data
+        updated_sale = {
+            "product_id": new_product_id,
+            "total_product": new_quantity,
+            "total_price": new_total_price
+        }
+
+        sales.update_one(
+            {"_id": ObjectId(sale_id)},
+            {"$set": updated_sale}
+        )
+
+        # Prepare the response data
+        updated_sale["_id"] = sale_id
+        updated_sale["product_id"] = new_product_id
+
+        # Response
+        return jsonify({
+            "message": "Sale updated successfully!",
+            "data": updated_sale
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # RUN APP
 if __name__ == '__main__':
     app.run(debug=True, port=port)
