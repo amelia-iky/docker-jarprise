@@ -44,7 +44,7 @@ class SaleModel(BaseModel):
     total_product: int = Field(...)
     total_price: float = Field(...)
 
-# API
+# ENDPOINTS API
 """ Testing API """
 @app.route('/', methods=['GET'])
 def index():
@@ -109,6 +109,39 @@ def get_product_by_id(product_id):
         return jsonify({
             "message": "Product retrieved successfully!",
             "data": data
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/product/<string:product_id>', methods=['PUT'])
+def updateProduct(product_id):
+    try:
+        # Request data
+        data = request.get_json()
+
+        # Find data is exists
+        existing_product = products.find_one({"_id": ObjectId(product_id)})
+        if not existing_product:
+            return jsonify({"error": "Product not found"}), 404
+
+        # Merge existing product data with the updated fields
+        updated_data = {**existing_product, **data}
+        updated_data["_id"] = str(existing_product["_id"])
+
+        # Validate data
+        product = ProductModel(**updated_data)
+
+        # Update data
+        products.update_one(
+            {"_id": ObjectId(product_id)},
+            {"$set": product.dict()}
+        )
+
+        # Response
+        return jsonify({
+            "message": "Data updated successfully!",
+            "data": product.dict()
         }), 200
 
     except Exception as e:
