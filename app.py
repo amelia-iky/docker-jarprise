@@ -11,15 +11,17 @@ load_dotenv()
 app = Flask(__name__)
 
 # Environment variables
-mongodb_connection = os.environ.get("MONGO_URI", "mongodb://localhost:27017/db_phone")
-port = int(os.environ.get("PORT", 3000))
+mongodb_connect = os.environ.get("MONGO_URI")
+database = os.environ.get("DATABASE")
+port = int(os.environ.get("PORT"))
 
 # Connect to MongoDB
 try:
-    client = MongoClient(mongodb_connection)
+    # MongoDB
+    client = MongoClient(mongodb_connect)
 
     # Databases
-    db = client["db_phone"]
+    db = client[database]
 
     # Collections
     products = db["products"]
@@ -64,7 +66,7 @@ def createProduct():
 
         # Response
         return jsonify({
-            "message": "Product added successfully!",
+            "message": "Data created successfully!",
             "data": product.dict()
         }), 201
     except Exception as e:
@@ -91,10 +93,10 @@ def createSale():
         product = products.find_one({"_id": ObjectId(product_id)})
 
         if not product:
-            return jsonify({"error": "Product not found"}), 404
+            return jsonify({"error": "Data product not found"}), 404
 
         if product["stock"] < quantity:
-            return jsonify({"error": "Insufficient stock"}), 400
+            return jsonify({"error": "Stock not enough"}), 400
 
         # Set total price
         total_price = product["price"] * quantity
@@ -120,7 +122,7 @@ def createSale():
 
         # Response
         return jsonify({
-            "message": "Sale added successfully",
+            "message": "Data created successfully!",
             "data": sale
         }), 201
 
@@ -156,7 +158,7 @@ def getOneSale(sale_id):
         sale = sales.find_one({"_id": ObjectId(sale_id)})
 
         if not sale:
-            return jsonify({"error": "Sale not found"}), 404
+            return jsonify({"error": "Data sale not found"}), 404
 
         # Convert ObjectId to string
         sale["_id"] = str(sale["_id"])
