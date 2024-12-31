@@ -50,6 +50,7 @@ class SaleModel(BaseModel):
 def index():
     return jsonify({"message": "Hello, World!"}), 200
 
+
 """ Products API """
 # Create
 @app.route('/product', methods=['POST'])
@@ -67,7 +68,7 @@ def createProduct():
             "message": "Data created successfully!",
             "data": product.dict()
         }), 201
-        
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -112,6 +113,41 @@ def get_product_by_id(product_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# Delete all
+@app.route('/product', methods=['DELETE'])
+def deleteAllProduct():
+    try:
+        # Delete all products
+        data = products.delete_many({})
+
+        # Response
+        return jsonify({
+            "message": f"{data.deleted_count} data deleted successfully!"
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Delete by ID
+@app.route('/product/<string:product_id>', methods=['DELETE'])
+def deleteOneProduct(product_id):
+    try:
+        # Delete data
+        data = products.delete_one({"_id": ObjectId(product_id)})
+
+        # Check if data exists
+        if data.deleted_count == 0:
+            return jsonify({"error": "Data product not found"}), 404
+
+        # Response
+        return jsonify({
+            "message": "Data deleted successfully!"
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 """ Sales API """
 # Create
