@@ -71,8 +71,9 @@ def create_product():
 
 
 """ Sales API """
+# Create
 @app.route('/sale', methods=['POST'])
-def create_sale():
+def createSale():
     try:
         # Request data
         data = request.get_json()
@@ -126,6 +127,50 @@ def create_sale():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Run the app
+# Get all
+@app.route('/sale', methods=['GET'])
+def getAllSale():
+    try:
+        # Fetch data
+        sales_data = list(sales.find())
+
+        # Convert ObjectId to string
+        for sale in sales_data:
+            sale["_id"] = str(sale["_id"])
+            sale["product_id"] = str(sale["product_id"])
+
+        # Response
+        return jsonify({
+            "message": "Sales retrieved successfully",
+            "data": sales_data
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Get by ID
+@app.route('/sale/<string:sale_id>', methods=['GET'])
+def getOneSale(sale_id):
+    try:
+        # Find data
+        sale = sales.find_one({"_id": ObjectId(sale_id)})
+
+        if not sale:
+            return jsonify({"error": "Sale not found"}), 404
+
+        # Convert ObjectId to string
+        sale["_id"] = str(sale["_id"])
+        sale["product_id"] = str(sale["product_id"])
+
+        # Response
+        return jsonify({
+            "message": "Sale retrieved successfully",
+            "data": sale
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Run app
 if __name__ == '__main__':
     app.run(debug=True, port=port)
