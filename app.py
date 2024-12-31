@@ -51,8 +51,9 @@ def index():
     return jsonify({"message": "Hello, World!"}), 200
 
 """ Products API """
+# Create
 @app.route('/product', methods=['POST'])
-def create_product():
+def createProduct():
     try:
         # Request data
         data = request.get_json()
@@ -69,7 +70,6 @@ def create_product():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 """ Sales API """
 # Create
 @app.route('/sale', methods=['POST'])
@@ -82,10 +82,10 @@ def createSale():
 
         # Validate data
         if not product_id or not quantity:
-            return jsonify({"error": "product_id and quantity are required"}), 400
+            return jsonify({"error": "Data cannot be empty"}), 400
 
         if quantity <= 0:
-            return jsonify({"error": "quantity must be greater than 0"}), 400
+            return jsonify({"error": "Quantity must be greater than 0"}), 400
 
         # Find product by ID
         product = products.find_one({"_id": ObjectId(product_id)})
